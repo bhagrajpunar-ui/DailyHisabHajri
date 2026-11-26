@@ -50,6 +50,24 @@ private fun loadAttendance(context: Context, date: String): String =
 private fun saveAttendance(context: Context, date: String, status: String) {
  context.getSharedPreferences("daily_hisab", Context.MODE_PRIVATE).edit().putString("attendance_$date", status).apply()
 }
+private data class AttendanceRecord(val date: String, val status: String)
+private fun loadAttendanceHistory(context: Context): List<AttendanceRecord> {
+ val prefs = context.getSharedPreferences("daily_hisab", Context.MODE_PRIVATE)
+ return prefs.all.entries.mapNotNull { (key, value) ->
+  if (key.startsWith("attendance_") && value is String && value.isNotBlank())
+   AttendanceRecord(key.removePrefix("attendance_"), value)
+  else null
+ }.sortedByDescending { it.date }
+}
+private data class AttendanceRecord(val date: String, val status: String)
+private fun loadAttendanceHistory(context: Context): List<AttendanceRecord> {
+ val prefs = context.getSharedPreferences("daily_hisab", Context.MODE_PRIVATE)
+ return prefs.all.entries.mapNotNull { (key, value) ->
+  if (key.startsWith("attendance_") && value is String && value.isNotBlank())
+   AttendanceRecord(key.removePrefix("attendance_"), value)
+  else null
+ }.sortedByDescending { it.date }
+}
 
 class MainActivity : ComponentActivity() {
  override fun onCreate(savedInstanceState: Bundle?) {
@@ -126,7 +144,17 @@ fun DailyHisabApp() {
     }
     Page.HISTORY -> LazyColumn(Modifier.fillMaxSize().padding(padding).padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
      item { Text("हिसाब की हिस्ट्री", fontSize = 25.sp, fontWeight = FontWeight.Bold) }
-     items(records.sortedByDescending { it.date }.reversed()) { RecordRow(it) }
+     item { Text("हाजिरी हिस्ट्री", fontSize = 19.sp, fontWeight = FontWeight.Bold) }
+     items(loadAttendanceHistory(context)) { entry ->
+      Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp)) {
+       Row(Modifier.fillMaxWidth().padding(14.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+        Text(entry.date, color = Color.Gray)
+        Text(entry.status, color = Green, fontWeight = FontWeight.Bold)
+       }
+      }
+     }
+     item { Text("कमाई और खर्च", fontSize = 19.sp, fontWeight = FontWeight.Bold) }
+     items(records.sortedByDescending { it.date }) { RecordRow(it) }
     }
    }
   }
